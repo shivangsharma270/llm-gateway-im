@@ -1,0 +1,5 @@
+{
+  "name": "LLM Gateway Explorer",
+  "description": "A professional frontend for interacting with company LLM gateway, featuring model selection and cost analysis.",
+  "requestFramePermissions": []
+}
