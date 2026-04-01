@@ -20,7 +20,7 @@ async function startServer() {
     res.json({ 
       status: "ok", 
       env: {
-        hasUrl: !!process.env.LLM_GATEWAY_URL,
+        hasUrl: true,
         nodeEnv: process.env.NODE_ENV
       }
     });
@@ -37,7 +37,7 @@ async function startServer() {
       });
     }
 
-    const baseUrl = process.env.LLM_GATEWAY_URL || "https://imllm.intermesh.net";
+    const baseUrl = "https://imllm.intermesh.net";
 
     console.log(`[Chat Request] Model: ${model}, Messages: ${messages?.length}`);
 
