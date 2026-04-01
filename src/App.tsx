@@ -23,10 +23,7 @@ import {
   MoreVertical,
   Check,
   Sun,
-  Moon,
-  Lock,
-  LogIn,
-  LogOut
+  Moon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -145,12 +142,6 @@ export default function App() {
     const saved = localStorage.getItem('llm_dark_mode');
     return saved === 'true';
   });
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    return localStorage.getItem('llm_is_logged_in') === 'true';
-  });
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [loginError, setLoginError] = useState('');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -173,7 +164,6 @@ export default function App() {
     localStorage.setItem('llm_total_tokens', totalTokens.toString());
     localStorage.setItem('llm_user_api_key', userApiKey);
     localStorage.setItem('llm_dark_mode', darkMode.toString());
-    localStorage.setItem('llm_is_logged_in', isLoggedIn.toString());
 
     // Sync dark mode class to root element
     if (darkMode) {
@@ -339,105 +329,6 @@ export default function App() {
     localStorage.removeItem('llm_total_tokens');
   };
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (loginEmail === 'userofllm@indiamart.com' && loginPassword === 'madebyshivang@113816') {
-      setIsLoggedIn(true);
-      setLoginError('');
-    } else {
-      setLoginError('Invalid username or password');
-    }
-  };
-
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    localStorage.removeItem('llm_is_logged_in');
-  };
-
-  if (!isLoggedIn) {
-    return (
-      <div className={`min-h-screen flex items-center justify-center p-4 transition-colors duration-300 ${darkMode ? 'bg-gray-950' : 'bg-gray-50'}`}>
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`w-full max-w-md p-8 rounded-3xl border shadow-2xl transition-colors duration-300 ${darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}
-        >
-          <div className="flex flex-col items-center mb-8">
-            <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
-              <Terminal className="w-8 h-8 text-white" />
-            </div>
-            <h1 className={`text-2xl font-bold tracking-tight transition-colors duration-300 ${darkMode ? 'text-white' : 'text-gray-900'}`}>LLM Gateway</h1>
-            <p className="text-gray-500 text-sm mt-1">Please sign in to continue</p>
-          </div>
-
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div>
-              <label className={`text-xs font-bold uppercase tracking-widest block mb-2 transition-colors duration-300 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Email Address</label>
-              <div className="relative">
-                <input 
-                  type="email" 
-                  value={loginEmail}
-                  onChange={(e) => setLoginEmail(e.target.value)}
-                  placeholder="user@indiamart.com"
-                  required
-                  className={`w-full border rounded-xl p-3 text-sm focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/5 focus:outline-none transition-all pr-10 ${darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-800'}`}
-                />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <User className="w-4 h-4 text-gray-400" />
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label className={`text-xs font-bold uppercase tracking-widest block mb-2 transition-colors duration-300 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Password</label>
-              <div className="relative">
-                <input 
-                  type="password" 
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  className={`w-full border rounded-xl p-3 text-sm focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/5 focus:outline-none transition-all pr-10 ${darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-800'}`}
-                />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <Lock className="w-4 h-4 text-gray-400" />
-                </div>
-              </div>
-            </div>
-
-            {loginError && (
-              <motion.div 
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-medium text-center"
-              >
-                {loginError}
-              </motion.div>
-            )}
-
-            <button 
-              type="submit"
-              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition-all shadow-md active:scale-[0.98] flex items-center justify-center gap-2"
-            >
-              <LogIn className="w-4 h-4" />
-              Sign In
-            </button>
-          </form>
-
-          <div className="mt-8 pt-6 border-t border-gray-800/10 flex justify-center">
-            <button 
-              onClick={() => setDarkMode(!darkMode)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all text-xs font-bold uppercase tracking-wider ${darkMode ? 'text-yellow-400 hover:bg-gray-800' : 'text-gray-500 hover:bg-gray-100'}`}
-            >
-              {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              {darkMode ? 'Light Mode' : 'Dark Mode'}
-            </button>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
-
   return (
     <div className={`flex h-screen font-sans overflow-hidden transition-colors duration-300 ${darkMode ? 'bg-gray-950 text-gray-100' : 'bg-white text-gray-900'}`}>
       {/* Sidebar */}
@@ -556,13 +447,6 @@ export default function App() {
               <div className={`text-xs font-bold truncate transition-colors duration-300 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Made By Shivang Sharma</div>
               <div className="text-[10px] text-gray-500 truncate">Email: shivang.sharma@indiamart.com</div>
             </div>
-            <button 
-              onClick={handleLogout}
-              className={`p-2 rounded-lg transition-colors text-gray-400 hover:text-red-500 ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-red-50'}`}
-              title="Logout"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
             <button 
               onClick={deleteAllHistory}
               className={`p-2 rounded-lg transition-colors text-gray-400 hover:text-red-500 ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-red-50'}`}
