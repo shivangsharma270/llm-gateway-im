@@ -519,7 +519,7 @@ export default function App() {
               <div className={`w-16 h-16 rounded-3xl flex items-center justify-center mb-6 shadow-sm border transition-colors duration-300 ${darkMode ? 'bg-gray-900 border-gray-800' : 'bg-blue-50 border-blue-100'}`}>
                 <Bot className={`w-8 h-8 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
               </div>
-              <h2 className={`text-2xl font-bold mb-3 tracking-tight transition-colors duration-300 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Welcome to LLM Gateway</h2>
+              <h2 className={`text-2xl font-bold mb-3 tracking-tight transition-colors duration-300 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Welcome to LLM Gateway App</h2>
               <p className="text-gray-500 text-sm leading-relaxed">
                 Start a new conversation or select a model to begin. 
                 Your chats are saved automatically.
@@ -640,7 +640,7 @@ export default function App() {
               </div>
             </form>
             <p className="mt-3 text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-              Intermesh LLM Gateway • {selectedModel.name}
+              LLM Gateway App • {selectedModel.name}
             </p>
           </div>
         </div>
