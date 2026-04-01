@@ -26,19 +26,6 @@ async function startServer() {
     });
   });
 
-  // Login endpoint
-  app.post("/api/login", (req, res) => {
-    const { email, password } = req.body;
-    const envUsername = process.env.APP_USERNAME || "userofllm@indiamart.com";
-    const envPassword = process.env.APP_PASSWORD || "madebyshivang@113816";
-
-    if (email === envUsername && password === envPassword) {
-      res.json({ success: true });
-    } else {
-      res.status(401).json({ success: false, error: "Invalid username or password" });
-    }
-  });
-
   // Proxy endpoint for LLM Gateway
   app.post("/api/chat", async (req, res) => {
     const { model, messages, temperature, stream, apiKey } = req.body;

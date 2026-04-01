@@ -339,28 +339,13 @@ export default function App() {
     localStorage.removeItem('llm_total_tokens');
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoginError('');
-    
-    try {
-      const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: loginEmail, password: loginPassword })
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        setIsLoggedIn(true);
-        setLoginError('');
-      } else {
-        setLoginError(data.error || 'Invalid username or password');
-      }
-    } catch (error) {
-      console.error('Login Error:', error);
-      setLoginError('Failed to connect to login service');
+    if (loginEmail === 'userofllm@indiamart.com' && loginPassword === 'madebyshivang@113816') {
+      setIsLoggedIn(true);
+      setLoginError('');
+    } else {
+      setLoginError('Invalid username or password');
     }
   };
 
