@@ -124,7 +124,11 @@ export default function App() {
   const [input, setInput] = useState('');
   const [selectedModel, setSelectedModel] = useState(MODELS[0]);
   const [isLoading, setIsLoading] = useState(false);
-  const [temperature, setTemperature] = useState(0.7);
+  const [temperature, setTemperature] = useState(() => {
+    const saved = localStorage.getItem('llm_temperature');
+    const val = saved ? parseFloat(saved) : 0.7;
+    return val > 1 ? 1 : val;
+  });
   const [showSettings, setShowSettings] = useState(false);
   
   const [totalCost, setTotalCost] = useState(() => {
@@ -164,6 +168,7 @@ export default function App() {
     localStorage.setItem('llm_total_tokens', totalTokens.toString());
     localStorage.setItem('llm_user_api_key', userApiKey);
     localStorage.setItem('llm_dark_mode', darkMode.toString());
+    localStorage.setItem('llm_temperature', temperature.toString());
 
     // Sync dark mode class to root element
     if (darkMode) {
@@ -171,7 +176,7 @@ export default function App() {
     } else {
       document.documentElement.classList.remove('dark');
     }
-  }, [sessions, activeSessionId, totalCost, totalTokens, userApiKey, darkMode]);
+  }, [sessions, activeSessionId, totalCost, totalTokens, userApiKey, darkMode, temperature]);
 
   const calculateCost = (usage: Message['usage'], model: ModelConfig) => {
     if (!usage) return 0;
@@ -692,7 +697,7 @@ export default function App() {
                     <input 
                       type="range" 
                       min="0" 
-                      max="2" 
+                      max="1" 
                       step="0.1" 
                       value={temperature}
                       onChange={(e) => setTemperature(parseFloat(e.target.value))}
