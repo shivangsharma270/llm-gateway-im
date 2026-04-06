@@ -53,6 +53,7 @@ async function startServer() {
           messages,
           temperature: temperature ?? 1.0,
           stream: stream ?? false,
+          stream_options: stream ? { include_usage: true } : undefined,
         }),
       });
 
@@ -67,7 +68,7 @@ async function startServer() {
       }
 
       if (stream) {
-        // Handle streaming if requested (though we'll start with non-streaming for simplicity)
+        // Handle streaming
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
@@ -75,10 +76,12 @@ async function startServer() {
         const reader = response.body?.getReader();
         if (!reader) throw new Error("No reader available");
 
+        const decoder = new TextDecoder();
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          res.write(value);
+          const chunk = decoder.decode(value, { stream: true });
+          res.write(chunk);
         }
         res.end();
       } else {

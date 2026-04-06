@@ -23,11 +23,30 @@ import {
   MoreVertical,
   Check,
   Sun,
-  Moon
+  Moon,
+  Globe,
+  Activity,
+  Shield,
+  Paperclip,
+  X,
+  FileText,
+  Image as ImageIcon,
+  Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 // Types
+interface Attachment {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  data: string; // base64
+  previewUrl?: string;
+}
+
 interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
@@ -39,6 +58,7 @@ interface Message {
     total_tokens: number;
   };
   cost?: number;
+  attachments?: Attachment[];
 }
 
 interface ChatSession {
@@ -56,48 +76,175 @@ interface ModelConfig {
   inputCostPer1M: number;
   outputCostPer1M: number;
   icon: React.ReactNode;
+  capabilities: {
+    images: boolean;
+    streaming: boolean;
+    maxContext: string;
+  };
 }
 
 const MODELS: ModelConfig[] = [
   { 
-    id: 'anthropic/claude-sonnet-4-6', 
-    name: 'Claude 3.5 Sonnet', 
-    description: 'Best balance of speed and intelligence',
+    id: 'anthropic/claude-sonnet-4.5', 
+    name: 'Claude 4.5 Sonnet', 
+    description: 'Next-gen intelligence and speed',
     inputCostPer1M: 3.00,
     outputCostPer1M: 15.00,
-    icon: <Zap className="w-4 h-4 text-orange-500" />
+    icon: <Zap className="w-4 h-4 text-orange-500" />,
+    capabilities: { images: true, streaming: true, maxContext: '200k' }
   },
   { 
-    id: 'anthropic/claude-opus-4-6', 
-    name: 'Claude 3 Opus', 
-    description: 'Most powerful model for complex tasks',
+    id: 'anthropic/claude-sonnet-4', 
+    name: 'Claude 4 Sonnet', 
+    description: 'High-performance reasoning',
+    inputCostPer1M: 3.00,
+    outputCostPer1M: 15.00,
+    icon: <Zap className="w-4 h-4 text-orange-400" />,
+    capabilities: { images: true, streaming: true, maxContext: '200k' }
+  },
+  { 
+    id: 'openai/gpt-5', 
+    name: 'GPT-5', 
+    description: 'Ultimate reasoning and intelligence',
     inputCostPer1M: 15.00,
-    outputCostPer1M: 75.00,
-    icon: <Cpu className="w-4 h-4 text-purple-500" />
+    outputCostPer1M: 45.00,
+    icon: <Sparkles className="w-4 h-4 text-emerald-600" />,
+    capabilities: { images: true, streaming: true, maxContext: '128k' }
   },
   { 
-    id: 'anthropic/claude-haiku-4-5', 
-    name: 'Claude 3 Haiku', 
-    description: 'Fastest and most affordable model',
-    inputCostPer1M: 0.25,
-    outputCostPer1M: 1.25,
-    icon: <Zap className="w-4 h-4 text-yellow-500" />
+    id: 'openai/gpt-5-mini', 
+    name: 'GPT-5 Mini', 
+    description: 'Efficient next-gen intelligence',
+    inputCostPer1M: 0.15,
+    outputCostPer1M: 0.60,
+    icon: <Zap className="w-4 h-4 text-emerald-500" />,
+    capabilities: { images: true, streaming: true, maxContext: '128k' }
   },
   { 
-    id: 'openai/gpt-5.4', 
-    name: 'GPT-5.4', 
-    description: 'Next-gen reasoning and multimodal capabilities',
+    id: 'openai/gpt-5-nano', 
+    name: 'GPT-5 Nano', 
+    description: 'Ultra-fast edge intelligence',
+    inputCostPer1M: 0.05,
+    outputCostPer1M: 0.20,
+    icon: <Zap className="w-4 h-4 text-emerald-400" />,
+    capabilities: { images: false, streaming: true, maxContext: '32k' }
+  },
+  { 
+    id: 'openai/gpt-5-chat', 
+    name: 'GPT-5 Chat', 
+    description: 'Optimized for conversational flow',
+    inputCostPer1M: 5.00,
+    outputCostPer1M: 15.00,
+    icon: <MessageSquare className="w-4 h-4 text-emerald-500" />,
+    capabilities: { images: true, streaming: true, maxContext: '128k' }
+  },
+  { 
+    id: 'openai/o4-mini', 
+    name: 'o4 Mini', 
+    description: 'Advanced reasoning in a small package',
+    inputCostPer1M: 0.15,
+    outputCostPer1M: 0.60,
+    icon: <Cpu className="w-4 h-4 text-purple-600" />,
+    capabilities: { images: true, streaming: true, maxContext: '128k' }
+  },
+  { 
+    id: 'openai/o3', 
+    name: 'o3', 
+    description: 'Specialized reasoning model',
     inputCostPer1M: 10.00,
     outputCostPer1M: 30.00,
-    icon: <Sparkles className="w-4 h-4 text-emerald-500" />
+    icon: <Cpu className="w-4 h-4 text-purple-500" />,
+    capabilities: { images: true, streaming: true, maxContext: '128k' }
   },
   { 
-    id: 'google/gemini-3.1-pro-preview', 
-    name: 'Gemini 3.1 Pro', 
-    description: 'Google\'s most capable model for reasoning',
+    id: 'openai/gpt-4.1', 
+    name: 'GPT-4.1', 
+    description: 'Refined GPT-4 intelligence',
+    inputCostPer1M: 5.00,
+    outputCostPer1M: 15.00,
+    icon: <Sparkles className="w-4 h-4 text-blue-600" />,
+    capabilities: { images: true, streaming: true, maxContext: '128k' }
+  },
+  { 
+    id: 'openai/gpt-4.1-mini', 
+    name: 'GPT-4.1 Mini', 
+    description: 'Fast and capable GPT-4 variant',
+    inputCostPer1M: 0.15,
+    outputCostPer1M: 0.60,
+    icon: <Zap className="w-4 h-4 text-blue-500" />,
+    capabilities: { images: true, streaming: true, maxContext: '128k' }
+  },
+  { 
+    id: 'openai/gpt-4.1-nano', 
+    name: 'GPT-4.1 Nano', 
+    description: 'Lightweight GPT-4 intelligence',
+    inputCostPer1M: 0.05,
+    outputCostPer1M: 0.20,
+    icon: <Zap className="w-4 h-4 text-blue-400" />,
+    capabilities: { images: false, streaming: true, maxContext: '32k' }
+  },
+  { 
+    id: 'google/gemini-2.5-pro', 
+    name: 'Gemini 2.5 Pro', 
+    description: 'Google\'s state-of-the-art reasoning',
     inputCostPer1M: 3.50,
     outputCostPer1M: 10.50,
-    icon: <Bot className="w-4 h-4 text-blue-500" />
+    icon: <Bot className="w-4 h-4 text-blue-600" />,
+    capabilities: { images: true, streaming: true, maxContext: '2M' }
+  },
+  { 
+    id: 'google/gemini-2.5-flash', 
+    name: 'Gemini 2.5 Flash', 
+    description: 'Fast and versatile multimodal model',
+    inputCostPer1M: 0.10,
+    outputCostPer1M: 0.30,
+    icon: <Zap className="w-4 h-4 text-blue-500" />,
+    capabilities: { images: true, streaming: true, maxContext: '1M' }
+  },
+  { 
+    id: 'google/gemini-2.5-flash-lite', 
+    name: 'Gemini 2.5 Flash Lite', 
+    description: 'Ultra-efficient multimodal model',
+    inputCostPer1M: 0.07,
+    outputCostPer1M: 0.21,
+    icon: <Zap className="w-4 h-4 text-blue-400" />,
+    capabilities: { images: true, streaming: true, maxContext: '1M' }
+  },
+  { 
+    id: 'google/gemini-2.0-flash', 
+    name: 'Gemini 2.0 Flash', 
+    description: 'High-speed multimodal intelligence',
+    inputCostPer1M: 0.10,
+    outputCostPer1M: 0.30,
+    icon: <Zap className="w-4 h-4 text-cyan-500" />,
+    capabilities: { images: true, streaming: true, maxContext: '1M' }
+  },
+  { 
+    id: 'google/gemini-2.0-flash-lite', 
+    name: 'Gemini 2.0 Flash Lite', 
+    description: 'Efficient multimodal intelligence',
+    inputCostPer1M: 0.07,
+    outputCostPer1M: 0.21,
+    icon: <Zap className="w-4 h-4 text-cyan-400" />,
+    capabilities: { images: true, streaming: true, maxContext: '1M' }
+  },
+  { 
+    id: 'x-ai/grok-4', 
+    name: 'Grok-4', 
+    description: 'Real-time knowledge and reasoning',
+    inputCostPer1M: 5.00,
+    outputCostPer1M: 15.00,
+    icon: <Globe className="w-4 h-4 text-gray-400" />,
+    capabilities: { images: true, streaming: true, maxContext: '128k' }
+  },
+  { 
+    id: 'openai/gpt-oss-120b', 
+    name: 'GPT-OSS 120B', 
+    description: 'Open-source massive scale model',
+    inputCostPer1M: 2.00,
+    outputCostPer1M: 6.00,
+    icon: <Activity className="w-4 h-4 text-indigo-500" />,
+    capabilities: { images: false, streaming: true, maxContext: '32k' }
   }
 ];
 
@@ -147,6 +294,9 @@ export default function App() {
     return saved === 'true';
   });
   
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const activeSession = sessions.find(s => s.id === activeSessionId) || sessions[0];
@@ -180,8 +330,8 @@ export default function App() {
 
   const calculateCost = (usage: Message['usage'], model: ModelConfig) => {
     if (!usage) return 0;
-    const inputCost = (usage.prompt_tokens / 1_000_000) * model.inputCostPer1M;
-    const outputCost = (usage.completion_tokens / 1_000_000) * model.outputCostPer1M;
+    const inputCost = ((usage.prompt_tokens || 0) / 1_000_000) * model.inputCostPer1M;
+    const outputCost = ((usage.completion_tokens || 0) / 1_000_000) * model.outputCostPer1M;
     return inputCost + outputCost;
   };
 
@@ -212,7 +362,7 @@ export default function App() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if ((!input.trim() && attachments.length === 0) || isLoading) return;
 
     if (!userApiKey) {
       const warningMessage: Message = {
@@ -230,12 +380,14 @@ export default function App() {
       role: 'user',
       content: input,
       id: Date.now().toString(),
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      attachments: attachments.length > 0 ? [...attachments] : undefined
     };
 
     const newMessages = [...messages, userMessage];
     updateSessionMessages(newMessages);
     setInput('');
+    setAttachments([]);
     setIsLoading(true);
 
     try {
@@ -244,9 +396,35 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: selectedModel.id,
-          messages: newMessages.map(m => ({ role: m.role, content: m.content })),
+          messages: newMessages.map(m => {
+            // If there are no attachments, use simple string content
+            if (!m.attachments || m.attachments.length === 0) {
+              return { role: m.role, content: m.content };
+            }
+
+            // If there are attachments, use the multimodal array format
+            const contentParts: any[] = [];
+            
+            // Add the text content
+            contentParts.push({ type: 'text', text: m.content });
+
+            // Add image attachments
+            m.attachments.forEach(a => {
+              if (a.type.startsWith('image/')) {
+                contentParts.push({
+                  type: 'image_url',
+                  image_url: {
+                    url: `data:${a.type};base64,${a.data}`
+                  }
+                });
+              }
+            });
+
+            return { role: m.role, content: contentParts };
+          }),
           temperature: temperature,
-          apiKey: userApiKey
+          apiKey: userApiKey,
+          stream: selectedModel.capabilities.streaming
         })
       });
 
@@ -255,27 +433,104 @@ export default function App() {
         throw new Error(errorData.details || errorData.error || 'Failed to fetch response');
       }
 
-      const data = await response.json();
-      
-      if (!data.choices || data.choices.length === 0) {
-        throw new Error('No response choices returned from gateway');
-      }
+      if (selectedModel.capabilities.streaming) {
+        const reader = response.body?.getReader();
+        if (!reader) throw new Error('No reader available');
 
-      const assistantMessage: Message = {
-        role: 'assistant',
-        content: data.choices[0].message.content,
-        id: (Date.now() + 1).toString(),
-        timestamp: Date.now(),
-        usage: data.usage,
-        cost: calculateCost(data.usage, selectedModel)
-      };
+        const assistantMessageId = (Date.now() + 1).toString();
+        let assistantContent = '';
+        let finalUsage: any = null;
+        
+        const initialAssistantMessage: Message = {
+          role: 'assistant',
+          content: '',
+          id: assistantMessageId,
+          timestamp: Date.now()
+        };
+        
+        updateSessionMessages([...newMessages, initialAssistantMessage]);
 
-      const finalMessages = [...newMessages, assistantMessage];
-      updateSessionMessages(finalMessages);
-      
-      if (data.usage) {
-        setTotalTokens(prev => prev + data.usage.total_tokens);
-        setTotalCost(prev => prev + calculateCost(data.usage, selectedModel));
+        const decoder = new TextDecoder();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const dataStr = line.slice(6);
+              if (dataStr === '[DONE]') break;
+              
+              try {
+                const data = JSON.parse(dataStr);
+                
+                // Capture usage if available (usually in the last chunk with stream_options)
+                if (data.usage) {
+                  finalUsage = data.usage;
+                }
+
+                const content = data.choices?.[0]?.delta?.content || '';
+                if (content) {
+                  assistantContent += content;
+                  
+                  // Update the message in state
+                  setSessions(prev => prev.map(s => {
+                    if (s.id === activeSessionId) {
+                      const updatedMessages = s.messages.map(m => 
+                        m.id === assistantMessageId ? { ...m, content: assistantContent } : m
+                      );
+                      return { ...s, messages: updatedMessages };
+                    }
+                    return s;
+                  }));
+                }
+              } catch (e) {
+                // Not JSON or partial JSON, ignore
+              }
+            }
+          }
+        }
+
+        // Final update with usage and cost for streaming
+        if (finalUsage) {
+          const cost = calculateCost(finalUsage, selectedModel);
+          setTotalTokens(prev => prev + finalUsage.total_tokens);
+          setTotalCost(prev => prev + cost);
+          
+          setSessions(prev => prev.map(s => {
+            if (s.id === activeSessionId) {
+              const updatedMessages = s.messages.map(m => 
+                m.id === assistantMessageId ? { 
+                  ...m, 
+                  usage: finalUsage,
+                  cost: cost
+                } : m
+              );
+              return { ...s, messages: updatedMessages };
+            }
+            return s;
+          }));
+        }
+      } else {
+        const data = await response.json();
+        const cost = calculateCost(data.usage, selectedModel);
+        
+        if (data.usage) {
+          setTotalTokens(prev => prev + data.usage.total_tokens);
+          setTotalCost(prev => prev + cost);
+        }
+
+        const assistantMessage: Message = {
+          role: 'assistant',
+          content: data.choices[0].message.content,
+          id: (Date.now() + 1).toString(),
+          timestamp: Date.now(),
+          usage: data.usage,
+          cost: cost
+        };
+        updateSessionMessages([...newMessages, assistantMessage]);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -289,6 +544,43 @@ export default function App() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      
+      // Only handle images
+      if (!file.type.startsWith('image/')) continue;
+      
+      // Read as base64 for images
+      const base64Reader = new FileReader();
+      base64Reader.onload = (event) => {
+        const base64 = event.target?.result as string;
+        if (!base64) return;
+        
+        const base64Data = base64.includes(',') ? base64.split(',')[1] : base64;
+        
+        const newAttachment: Attachment = {
+          id: Math.random().toString(36).substring(7),
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          data: base64Data,
+          previewUrl: base64
+        };
+        setAttachments(prev => [...prev, newAttachment]);
+      };
+      base64Reader.readAsDataURL(file);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeAttachment = (id: string) => {
+    setAttachments(prev => prev.filter(a => a.id !== id));
   };
 
   const updateSessionMessages = (newMessages: Message[]) => {
@@ -343,7 +635,7 @@ export default function App() {
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <Terminal className="w-5 h-5 text-white" />
             </div>
-            <h1 className={`text-lg font-bold tracking-tight transition-colors duration-300 ${darkMode ? 'text-white' : 'text-gray-900'}`}>LLM Gateway</h1>
+            <h1 className={`text-lg font-bold tracking-tight transition-colors duration-300 ${darkMode ? 'text-white' : 'text-gray-900'}`}>LLM Gateway App</h1>
           </div>
           
           <button 
@@ -387,33 +679,63 @@ export default function App() {
             </div>
           </div>
 
-          {/* Model Selection */}
-          <div>
-            <label className={`text-[10px] uppercase tracking-widest font-bold mb-2 block px-2 transition-colors duration-300 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+          {/* Model Selection Dropdown */}
+          <div className="px-2">
+            <label className={`text-[10px] uppercase tracking-widest font-bold mb-2 block transition-colors duration-300 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
               Select Model
             </label>
-            <div className="space-y-1">
-              {MODELS.map((model) => (
-                <button
-                  key={model.id}
-                  onClick={() => setSelectedModel(model)}
-                  className={`w-full flex items-start gap-3 p-2.5 rounded-xl transition-all text-left group ${
-                    selectedModel.id === model.id 
-                      ? darkMode ? 'bg-blue-900/30 border border-blue-800' : 'bg-blue-50 border border-blue-100' 
-                      : 'hover:bg-gray-200/50 border border-transparent'
-                  }`}
-                >
-                  <div className={`mt-0.5 p-1.5 rounded-lg ${selectedModel.id === model.id ? darkMode ? 'bg-blue-800' : 'bg-blue-100' : darkMode ? 'bg-gray-800' : 'bg-gray-200/50'}`}>
-                    {model.icon}
-                  </div>
-                  <div className="min-w-0">
-                    <div className={`text-xs font-semibold truncate ${selectedModel.id === model.id ? darkMode ? 'text-blue-400' : 'text-blue-700' : darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{model.name}</div>
-                    <div className={`text-[10px] truncate group-hover:text-gray-600 transition-colors duration-300 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                      {model.description}
-                    </div>
-                  </div>
-                </button>
-              ))}
+            <div className="relative">
+              <select
+                value={selectedModel.id}
+                onChange={(e) => {
+                  const model = MODELS.find(m => m.id === e.target.value);
+                  if (model) setSelectedModel(model);
+                }}
+                className={`w-full appearance-none p-3 pr-10 rounded-xl text-xs font-medium transition-all border shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${
+                  darkMode 
+                    ? 'bg-gray-800 border-gray-700 text-white' 
+                    : 'bg-white border-gray-200 text-gray-900'
+                }`}
+              >
+                {MODELS.map((model) => (
+                  <option key={model.id} value={model.id}>
+                    {model.name}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                <ChevronDown className="w-4 h-4" />
+              </div>
+            </div>
+            
+            {/* Selected Model Info */}
+            <div className={`mt-3 p-3 rounded-xl border transition-colors duration-300 ${darkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-blue-50/50 border-blue-100'}`}>
+              <div className="flex items-center gap-2 mb-1">
+                <div className={`p-1 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-white shadow-sm'}`}>
+                  {selectedModel.icon}
+                </div>
+                <span className={`text-[10px] font-bold uppercase tracking-wider ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                  Capabilities
+                </span>
+              </div>
+              <p className="text-[10px] text-gray-500 leading-relaxed italic">
+                {selectedModel.description}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {selectedModel.capabilities.images && (
+                  <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-widest ${darkMode ? 'bg-blue-900/40 text-blue-400' : 'bg-blue-100 text-blue-700'}`}>
+                    Vision
+                  </span>
+                )}
+                {selectedModel.capabilities.streaming && (
+                  <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-widest ${darkMode ? 'bg-emerald-900/40 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}`}>
+                    Streaming
+                  </span>
+                )}
+                <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-widest ${darkMode ? 'bg-purple-900/40 text-purple-400' : 'bg-purple-100 text-purple-700'}`}>
+                  {selectedModel.capabilities.maxContext} Context
+                </span>
+              </div>
             </div>
           </div>
 
@@ -444,13 +766,15 @@ export default function App() {
         </div>
 
         <div className={`p-4 border-t transition-colors duration-300 ${darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
-          <div className="flex items-center gap-3 px-1">
-            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-bold text-white shadow-sm">
-              SS
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className={`text-xs font-bold truncate transition-colors duration-300 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Made By Shivang Sharma</div>
-              <div className="text-[10px] text-gray-500 truncate">Email: shivang.sharma@indiamart.com</div>
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-bold text-white shadow-sm">
+                AI
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className={`text-xs font-bold truncate transition-colors duration-300 ${darkMode ? 'text-white' : 'text-gray-900'}`}>LLM Gateway</div>
+                <div className="text-[10px] text-gray-500 truncate">v1.0.0</div>
+              </div>
             </div>
             <button 
               onClick={deleteAllHistory}
@@ -561,6 +885,22 @@ export default function App() {
                     </div>
                     
                     <div className={`flex flex-col max-w-[85%] ${message.role === 'user' ? 'items-end' : ''}`}>
+                      {message.attachments && message.attachments.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {message.attachments.map(a => (
+                            <div key={a.id} className={`p-2 rounded-xl border flex items-center gap-2 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
+                              {a.previewUrl && (
+                                <img src={a.previewUrl} alt={a.name} className="w-12 h-12 rounded object-cover" />
+                              )}
+                              <div className="flex flex-col">
+                                <span className="text-xs font-medium truncate max-w-[100px]">{a.name}</span>
+                                <span className="text-[10px] text-gray-500">{(a.size / 1024).toFixed(1)} KB</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
                       <div className={`p-4 rounded-2xl text-sm leading-relaxed shadow-sm ${
                         message.role === 'user'
                           ? 'bg-blue-600 text-white rounded-tr-none'
@@ -568,14 +908,32 @@ export default function App() {
                             ? 'bg-gray-900 border border-gray-800 text-gray-200 rounded-tl-none' 
                             : 'bg-gray-50 border border-gray-100 text-gray-800 rounded-tl-none'
                       }`}>
-                        {message.content}
+                        <div className="prose prose-sm dark:prose-invert max-w-none">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {message.content}
+                          </ReactMarkdown>
+                        </div>
                       </div>
                       
                       {message.usage && (
-                        <div className="mt-2 flex items-center gap-3 text-[10px] text-gray-400 font-mono font-medium">
-                          <span>{message.usage.total_tokens} tokens</span>
+                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-gray-400 font-mono font-medium">
+                          <div className="flex items-center gap-1">
+                            <span className="opacity-60 uppercase tracking-tighter">In:</span>
+                            <span className={darkMode ? 'text-blue-400' : 'text-blue-600'}>{message.usage.prompt_tokens}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="opacity-60 uppercase tracking-tighter">Out:</span>
+                            <span className={darkMode ? 'text-purple-400' : 'text-purple-600'}>{message.usage.completion_tokens}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="opacity-60 uppercase tracking-tighter">Total:</span>
+                            <span>{message.usage.total_tokens}</span>
+                          </div>
                           <span>•</span>
-                          <span className={darkMode ? 'text-emerald-400' : 'text-emerald-600'}>${message.cost?.toFixed(5)}</span>
+                          <div className="flex items-center gap-1">
+                            <span className="opacity-60 uppercase tracking-tighter">Cost:</span>
+                            <span className={darkMode ? 'text-emerald-400' : 'text-emerald-600'}>${message.cost?.toFixed(6)}</span>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -607,11 +965,54 @@ export default function App() {
 
         {/* Input Area */}
         <div className={`p-4 md:p-8 bg-gradient-to-t transition-colors duration-300 ${darkMode ? 'from-gray-950 via-gray-950 to-transparent' : 'from-white via-white to-transparent'}`}>
-          <div className="max-w-3xl mx-auto relative">
+          <div className="max-w-3xl mx-auto">
+            {attachments.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3 px-1">
+                {attachments.map(a => (
+                  <div key={a.id} className={`relative p-2 rounded-xl border flex items-center gap-2 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-sm'}`}>
+                    {a.previewUrl ? (
+                      <img src={a.previewUrl} alt={a.name} className="w-10 h-10 rounded object-cover" />
+                    ) : (
+                      <FileText className="w-6 h-6 text-blue-500" />
+                    )}
+                    <span className="text-xs font-medium truncate max-w-[100px]">{a.name}</span>
+                    <button 
+                      onClick={() => removeAttachment(a.id)}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-md"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <form 
               onSubmit={handleSubmit}
               className={`relative border rounded-2xl focus-within:border-blue-500/50 focus-within:ring-4 focus-within:ring-blue-500/5 transition-all shadow-lg ${darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}
             >
+              <div className="absolute left-3 top-4 flex items-center gap-1">
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleFileChange} 
+                  multiple 
+                  accept="image/*"
+                  className="hidden" 
+                />
+                <button 
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isLoading || !selectedModel.capabilities.images}
+                  className={`p-2 rounded-lg transition-colors ${
+                    darkMode ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-800' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                  } disabled:opacity-30 disabled:cursor-not-allowed`}
+                  title={!selectedModel.capabilities.images ? "Images not supported by this model" : "Add images"}
+                >
+                  <Paperclip className="w-5 h-5" />
+                </button>
+              </div>
+
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -621,27 +1022,50 @@ export default function App() {
                     handleSubmit(e);
                   }
                 }}
-                placeholder={`Message ${selectedModel.name}...`}
-                className={`w-full bg-transparent p-4 pr-16 focus:outline-none text-sm resize-none min-h-[56px] max-h-48 scrollbar-hide transition-colors duration-300 ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}
+                placeholder={isLoading ? "Thinking..." : `Message ${selectedModel.name}...`}
+                className={`w-full bg-transparent p-4 pl-12 pr-16 focus:outline-none text-sm resize-none min-h-[56px] max-h-48 scrollbar-hide transition-colors duration-300 ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}
                 rows={1}
+                disabled={isLoading}
               />
               <div className="absolute right-2 bottom-2 flex items-center gap-2">
                 <button
                   type="submit"
-                  disabled={!input.trim() || isLoading}
+                  disabled={(!input.trim() && attachments.length === 0) || isLoading}
                   className={`p-2 rounded-xl transition-all shadow-sm ${
-                    input.trim() && !isLoading
+                    (input.trim() || attachments.length > 0) && !isLoading
                       ? 'bg-blue-600 text-white hover:bg-blue-700'
                       : darkMode ? 'bg-gray-800 text-gray-600 cursor-not-allowed' : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                   }`}
                 >
-                  <Send className="w-4 h-4" />
+                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 </button>
               </div>
             </form>
-            <p className="mt-3 text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-              LLM Gateway App • {selectedModel.name}
-            </p>
+            
+            <div className="flex items-center justify-between mt-3 px-2">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5">
+                  <div className={`w-1.5 h-1.5 rounded-full ${selectedModel.capabilities.streaming ? 'bg-emerald-500' : 'bg-gray-400'}`} />
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                    {selectedModel.capabilities.streaming ? 'Streaming' : 'Static'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className={`w-1.5 h-1.5 rounded-full ${selectedModel.capabilities.images ? 'bg-blue-500' : 'bg-gray-400'}`} />
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                    {selectedModel.capabilities.images ? 'Vision' : 'Text-only'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                    Context: {selectedModel.capabilities.maxContext}
+                  </span>
+                </div>
+              </div>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                LLM Gateway App • {selectedModel.name}
+              </p>
+            </div>
           </div>
         </div>
 
