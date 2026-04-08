@@ -38,15 +38,6 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 // Types
-interface Attachment {
-  id: string;
-  name: string;
-  type: string;
-  size: number;
-  data: string; // base64
-  previewUrl?: string;
-}
-
 interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
@@ -58,7 +49,6 @@ interface Message {
     total_tokens: number;
   };
   cost?: number;
-  attachments?: Attachment[];
 }
 
 interface ChatSession {
@@ -77,7 +67,6 @@ interface ModelConfig {
   outputCostPer1M: number;
   icon: React.ReactNode;
   capabilities: {
-    images: boolean;
     streaming: boolean;
     maxContext: string;
   };
@@ -91,7 +80,7 @@ const MODELS: ModelConfig[] = [
     inputCostPer1M: 3.00,
     outputCostPer1M: 15.00,
     icon: <Zap className="w-4 h-4 text-orange-500" />,
-    capabilities: { images: true, streaming: true, maxContext: '200k' }
+    capabilities: { streaming: true, maxContext: '200k' }
   },
   { 
     id: 'anthropic/claude-sonnet-4', 
@@ -100,7 +89,7 @@ const MODELS: ModelConfig[] = [
     inputCostPer1M: 3.00,
     outputCostPer1M: 15.00,
     icon: <Zap className="w-4 h-4 text-orange-400" />,
-    capabilities: { images: true, streaming: true, maxContext: '200k' }
+    capabilities: { streaming: true, maxContext: '200k' }
   },
   { 
     id: 'openai/gpt-5', 
@@ -109,7 +98,7 @@ const MODELS: ModelConfig[] = [
     inputCostPer1M: 15.00,
     outputCostPer1M: 45.00,
     icon: <Sparkles className="w-4 h-4 text-emerald-600" />,
-    capabilities: { images: true, streaming: true, maxContext: '128k' }
+    capabilities: { streaming: true, maxContext: '128k' }
   },
   { 
     id: 'openai/gpt-5-mini', 
@@ -118,7 +107,7 @@ const MODELS: ModelConfig[] = [
     inputCostPer1M: 0.15,
     outputCostPer1M: 0.60,
     icon: <Zap className="w-4 h-4 text-emerald-500" />,
-    capabilities: { images: true, streaming: true, maxContext: '128k' }
+    capabilities: { streaming: true, maxContext: '128k' }
   },
   { 
     id: 'openai/gpt-5-nano', 
@@ -127,7 +116,7 @@ const MODELS: ModelConfig[] = [
     inputCostPer1M: 0.05,
     outputCostPer1M: 0.20,
     icon: <Zap className="w-4 h-4 text-emerald-400" />,
-    capabilities: { images: false, streaming: true, maxContext: '32k' }
+    capabilities: { streaming: true, maxContext: '32k' }
   },
   { 
     id: 'openai/gpt-5-chat', 
@@ -136,7 +125,7 @@ const MODELS: ModelConfig[] = [
     inputCostPer1M: 5.00,
     outputCostPer1M: 15.00,
     icon: <MessageSquare className="w-4 h-4 text-emerald-500" />,
-    capabilities: { images: true, streaming: true, maxContext: '128k' }
+    capabilities: { streaming: true, maxContext: '128k' }
   },
   { 
     id: 'openai/o4-mini', 
@@ -145,7 +134,7 @@ const MODELS: ModelConfig[] = [
     inputCostPer1M: 0.15,
     outputCostPer1M: 0.60,
     icon: <Cpu className="w-4 h-4 text-purple-600" />,
-    capabilities: { images: true, streaming: true, maxContext: '128k' }
+    capabilities: { streaming: true, maxContext: '128k' }
   },
   { 
     id: 'openai/o3', 
@@ -154,7 +143,7 @@ const MODELS: ModelConfig[] = [
     inputCostPer1M: 10.00,
     outputCostPer1M: 30.00,
     icon: <Cpu className="w-4 h-4 text-purple-500" />,
-    capabilities: { images: true, streaming: true, maxContext: '128k' }
+    capabilities: { streaming: true, maxContext: '128k' }
   },
   { 
     id: 'openai/gpt-4.1', 
@@ -163,7 +152,7 @@ const MODELS: ModelConfig[] = [
     inputCostPer1M: 5.00,
     outputCostPer1M: 15.00,
     icon: <Sparkles className="w-4 h-4 text-blue-600" />,
-    capabilities: { images: true, streaming: true, maxContext: '128k' }
+    capabilities: { streaming: true, maxContext: '128k' }
   },
   { 
     id: 'openai/gpt-4.1-mini', 
@@ -172,7 +161,7 @@ const MODELS: ModelConfig[] = [
     inputCostPer1M: 0.15,
     outputCostPer1M: 0.60,
     icon: <Zap className="w-4 h-4 text-blue-500" />,
-    capabilities: { images: true, streaming: true, maxContext: '128k' }
+    capabilities: { streaming: true, maxContext: '128k' }
   },
   { 
     id: 'openai/gpt-4.1-nano', 
@@ -181,7 +170,7 @@ const MODELS: ModelConfig[] = [
     inputCostPer1M: 0.05,
     outputCostPer1M: 0.20,
     icon: <Zap className="w-4 h-4 text-blue-400" />,
-    capabilities: { images: false, streaming: true, maxContext: '32k' }
+    capabilities: { streaming: true, maxContext: '32k' }
   },
   { 
     id: 'google/gemini-2.5-pro', 
@@ -190,7 +179,7 @@ const MODELS: ModelConfig[] = [
     inputCostPer1M: 3.50,
     outputCostPer1M: 10.50,
     icon: <Bot className="w-4 h-4 text-blue-600" />,
-    capabilities: { images: true, streaming: true, maxContext: '2M' }
+    capabilities: { streaming: true, maxContext: '2M' }
   },
   { 
     id: 'google/gemini-2.5-flash', 
@@ -199,7 +188,7 @@ const MODELS: ModelConfig[] = [
     inputCostPer1M: 0.10,
     outputCostPer1M: 0.30,
     icon: <Zap className="w-4 h-4 text-blue-500" />,
-    capabilities: { images: true, streaming: true, maxContext: '1M' }
+    capabilities: { streaming: true, maxContext: '1M' }
   },
   { 
     id: 'google/gemini-2.5-flash-lite', 
@@ -208,7 +197,7 @@ const MODELS: ModelConfig[] = [
     inputCostPer1M: 0.07,
     outputCostPer1M: 0.21,
     icon: <Zap className="w-4 h-4 text-blue-400" />,
-    capabilities: { images: true, streaming: true, maxContext: '1M' }
+    capabilities: { streaming: true, maxContext: '1M' }
   },
   { 
     id: 'google/gemini-2.0-flash', 
@@ -217,7 +206,7 @@ const MODELS: ModelConfig[] = [
     inputCostPer1M: 0.10,
     outputCostPer1M: 0.30,
     icon: <Zap className="w-4 h-4 text-cyan-500" />,
-    capabilities: { images: true, streaming: true, maxContext: '1M' }
+    capabilities: { streaming: true, maxContext: '1M' }
   },
   { 
     id: 'google/gemini-2.0-flash-lite', 
@@ -226,7 +215,7 @@ const MODELS: ModelConfig[] = [
     inputCostPer1M: 0.07,
     outputCostPer1M: 0.21,
     icon: <Zap className="w-4 h-4 text-cyan-400" />,
-    capabilities: { images: true, streaming: true, maxContext: '1M' }
+    capabilities: { streaming: true, maxContext: '1M' }
   },
   { 
     id: 'x-ai/grok-4', 
@@ -235,7 +224,7 @@ const MODELS: ModelConfig[] = [
     inputCostPer1M: 5.00,
     outputCostPer1M: 15.00,
     icon: <Globe className="w-4 h-4 text-gray-400" />,
-    capabilities: { images: true, streaming: true, maxContext: '128k' }
+    capabilities: { streaming: true, maxContext: '128k' }
   },
   { 
     id: 'openai/gpt-oss-120b', 
@@ -244,7 +233,7 @@ const MODELS: ModelConfig[] = [
     inputCostPer1M: 2.00,
     outputCostPer1M: 6.00,
     icon: <Activity className="w-4 h-4 text-indigo-500" />,
-    capabilities: { images: false, streaming: true, maxContext: '32k' }
+    capabilities: { streaming: true, maxContext: '32k' }
   }
 ];
 
@@ -293,9 +282,6 @@ export default function App() {
     const saved = localStorage.getItem('llm_dark_mode');
     return saved === 'true';
   });
-  
-  const [attachments, setAttachments] = useState<Attachment[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -362,7 +348,7 @@ export default function App() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if ((!input.trim() && attachments.length === 0) || isLoading) return;
+    if (!input.trim() || isLoading) return;
 
     if (!userApiKey) {
       const warningMessage: Message = {
@@ -380,14 +366,12 @@ export default function App() {
       role: 'user',
       content: input,
       id: Date.now().toString(),
-      timestamp: Date.now(),
-      attachments: attachments.length > 0 ? [...attachments] : undefined
+      timestamp: Date.now()
     };
 
     const newMessages = [...messages, userMessage];
     updateSessionMessages(newMessages);
     setInput('');
-    setAttachments([]);
     setIsLoading(true);
 
     try {
@@ -396,32 +380,7 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: selectedModel.id,
-          messages: newMessages.map(m => {
-            // If there are no attachments, use simple string content
-            if (!m.attachments || m.attachments.length === 0) {
-              return { role: m.role, content: m.content };
-            }
-
-            // If there are attachments, use the multimodal array format
-            const contentParts: any[] = [];
-            
-            // Add the text content
-            contentParts.push({ type: 'text', text: m.content });
-
-            // Add image attachments
-            m.attachments.forEach(a => {
-              if (a.type.startsWith('image/')) {
-                contentParts.push({
-                  type: 'image_url',
-                  image_url: {
-                    url: `data:${a.type};base64,${a.data}`
-                  }
-                });
-              }
-            });
-
-            return { role: m.role, content: contentParts };
-          }),
+          messages: newMessages.map(m => ({ role: m.role, content: m.content })),
           temperature: temperature,
           apiKey: userApiKey,
           stream: selectedModel.capabilities.streaming
@@ -544,43 +503,6 @@ export default function App() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      
-      // Only handle images
-      if (!file.type.startsWith('image/')) continue;
-      
-      // Read as base64 for images
-      const base64Reader = new FileReader();
-      base64Reader.onload = (event) => {
-        const base64 = event.target?.result as string;
-        if (!base64) return;
-        
-        const base64Data = base64.includes(',') ? base64.split(',')[1] : base64;
-        
-        const newAttachment: Attachment = {
-          id: Math.random().toString(36).substring(7),
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          data: base64Data,
-          previewUrl: base64
-        };
-        setAttachments(prev => [...prev, newAttachment]);
-      };
-      base64Reader.readAsDataURL(file);
-    }
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  const removeAttachment = (id: string) => {
-    setAttachments(prev => prev.filter(a => a.id !== id));
   };
 
   const updateSessionMessages = (newMessages: Message[]) => {
@@ -722,11 +644,6 @@ export default function App() {
                 {selectedModel.description}
               </p>
               <div className="mt-2 flex flex-wrap gap-1.5">
-                {selectedModel.capabilities.images && (
-                  <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-widest ${darkMode ? 'bg-blue-900/40 text-blue-400' : 'bg-blue-100 text-blue-700'}`}>
-                    Vision
-                  </span>
-                )}
                 {selectedModel.capabilities.streaming && (
                   <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-widest ${darkMode ? 'bg-emerald-900/40 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}`}>
                     Streaming
@@ -748,20 +665,30 @@ export default function App() {
               <BarChart3 className="w-4 h-4 text-gray-300" />
             </div>
             
-            <div className="space-y-3">
-              <div className="flex justify-between items-end">
-                <span className="text-[10px] text-gray-500 font-medium">Total Tokens</span>
-                <span className={`text-sm font-mono font-bold transition-colors duration-300 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
-                  {totalTokens.toLocaleString()}
-                </span>
+              <div className="space-y-3">
+                <div className="flex justify-between items-end">
+                  <span className="text-[10px] text-gray-500 font-medium">Total Tokens</span>
+                  <span className={`text-sm font-mono font-bold transition-colors duration-300 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                    {totalTokens.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-end">
+                  <span className="text-[10px] text-gray-500 font-medium">Total Cost</span>
+                  <span className={`text-sm font-mono font-bold transition-colors duration-300 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                    ${totalCost.toFixed(6)}
+                  </span>
+                </div>
+                <div className="pt-2 border-t border-gray-100 dark:border-gray-700 space-y-1">
+                  <div className="flex justify-between text-[9px] text-gray-400 font-mono">
+                    <span>Input Rate:</span>
+                    <span>${selectedModel.inputCostPer1M}/1M</span>
+                  </div>
+                  <div className="flex justify-between text-[9px] text-gray-400 font-mono">
+                    <span>Output Rate:</span>
+                    <span>${selectedModel.outputCostPer1M}/1M</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between items-end">
-                <span className="text-[10px] text-gray-500 font-medium">Est. Cost</span>
-                <span className={`text-sm font-mono font-bold transition-colors duration-300 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                  ${totalCost.toFixed(4)}
-                </span>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -885,22 +812,6 @@ export default function App() {
                     </div>
                     
                     <div className={`flex flex-col max-w-[85%] ${message.role === 'user' ? 'items-end' : ''}`}>
-                      {message.attachments && message.attachments.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mb-2">
-                          {message.attachments.map(a => (
-                            <div key={a.id} className={`p-2 rounded-xl border flex items-center gap-2 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
-                              {a.previewUrl && (
-                                <img src={a.previewUrl} alt={a.name} className="w-12 h-12 rounded object-cover" />
-                              )}
-                              <div className="flex flex-col">
-                                <span className="text-xs font-medium truncate max-w-[100px]">{a.name}</span>
-                                <span className="text-[10px] text-gray-500">{(a.size / 1024).toFixed(1)} KB</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
                       <div className={`p-4 rounded-2xl text-sm leading-relaxed shadow-sm ${
                         message.role === 'user'
                           ? 'bg-blue-600 text-white rounded-tr-none'
@@ -916,20 +827,20 @@ export default function App() {
                       </div>
                       
                       {message.usage && (
-                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-gray-400 font-mono font-medium">
+                        <div className="mt-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-gray-500 font-mono font-medium">
                           <div className="flex items-center gap-1">
-                            <span className="opacity-60 uppercase tracking-tighter">In:</span>
+                            <span className="opacity-60 uppercase tracking-tighter">Input Tokens:</span>
                             <span className={darkMode ? 'text-blue-400' : 'text-blue-600'}>{message.usage.prompt_tokens}</span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <span className="opacity-60 uppercase tracking-tighter">Out:</span>
+                            <span className="opacity-60 uppercase tracking-tighter">Output Tokens:</span>
                             <span className={darkMode ? 'text-purple-400' : 'text-purple-600'}>{message.usage.completion_tokens}</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <span className="opacity-60 uppercase tracking-tighter">Total:</span>
-                            <span>{message.usage.total_tokens}</span>
+                            <span className="text-gray-700 dark:text-gray-300">{message.usage.total_tokens}</span>
                           </div>
-                          <span>•</span>
+                          <div className="h-3 w-px bg-gray-200 dark:bg-gray-700 mx-1" />
                           <div className="flex items-center gap-1">
                             <span className="opacity-60 uppercase tracking-tighter">Cost:</span>
                             <span className={darkMode ? 'text-emerald-400' : 'text-emerald-600'}>${message.cost?.toFixed(6)}</span>
@@ -966,53 +877,10 @@ export default function App() {
         {/* Input Area */}
         <div className={`p-4 md:p-8 bg-gradient-to-t transition-colors duration-300 ${darkMode ? 'from-gray-950 via-gray-950 to-transparent' : 'from-white via-white to-transparent'}`}>
           <div className="max-w-3xl mx-auto">
-            {attachments.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-3 px-1">
-                {attachments.map(a => (
-                  <div key={a.id} className={`relative p-2 rounded-xl border flex items-center gap-2 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-sm'}`}>
-                    {a.previewUrl ? (
-                      <img src={a.previewUrl} alt={a.name} className="w-10 h-10 rounded object-cover" />
-                    ) : (
-                      <FileText className="w-6 h-6 text-blue-500" />
-                    )}
-                    <span className="text-xs font-medium truncate max-w-[100px]">{a.name}</span>
-                    <button 
-                      onClick={() => removeAttachment(a.id)}
-                      className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-md"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
             <form 
               onSubmit={handleSubmit}
               className={`relative border rounded-2xl focus-within:border-blue-500/50 focus-within:ring-4 focus-within:ring-blue-500/5 transition-all shadow-lg ${darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}
             >
-              <div className="absolute left-3 top-4 flex items-center gap-1">
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handleFileChange} 
-                  multiple 
-                  accept="image/*"
-                  className="hidden" 
-                />
-                <button 
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isLoading || !selectedModel.capabilities.images}
-                  className={`p-2 rounded-lg transition-colors ${
-                    darkMode ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-800' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
-                  } disabled:opacity-30 disabled:cursor-not-allowed`}
-                  title={!selectedModel.capabilities.images ? "Images not supported by this model" : "Add images"}
-                >
-                  <Paperclip className="w-5 h-5" />
-                </button>
-              </div>
-
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -1023,16 +891,16 @@ export default function App() {
                   }
                 }}
                 placeholder={isLoading ? "Thinking..." : `Message ${selectedModel.name}...`}
-                className={`w-full bg-transparent p-4 pl-12 pr-16 focus:outline-none text-sm resize-none min-h-[56px] max-h-48 scrollbar-hide transition-colors duration-300 ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}
+                className={`w-full bg-transparent p-4 pr-16 focus:outline-none text-sm resize-none min-h-[56px] max-h-48 scrollbar-hide transition-colors duration-300 ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}
                 rows={1}
                 disabled={isLoading}
               />
               <div className="absolute right-2 bottom-2 flex items-center gap-2">
                 <button
                   type="submit"
-                  disabled={(!input.trim() && attachments.length === 0) || isLoading}
+                  disabled={!input.trim() || isLoading}
                   className={`p-2 rounded-xl transition-all shadow-sm ${
-                    (input.trim() || attachments.length > 0) && !isLoading
+                    input.trim() && !isLoading
                       ? 'bg-blue-600 text-white hover:bg-blue-700'
                       : darkMode ? 'bg-gray-800 text-gray-600 cursor-not-allowed' : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                   }`}
@@ -1048,12 +916,6 @@ export default function App() {
                   <div className={`w-1.5 h-1.5 rounded-full ${selectedModel.capabilities.streaming ? 'bg-emerald-500' : 'bg-gray-400'}`} />
                   <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
                     {selectedModel.capabilities.streaming ? 'Streaming' : 'Static'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className={`w-1.5 h-1.5 rounded-full ${selectedModel.capabilities.images ? 'bg-blue-500' : 'bg-gray-400'}`} />
-                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-                    {selectedModel.capabilities.images ? 'Vision' : 'Text-only'}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5">
